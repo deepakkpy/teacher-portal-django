@@ -126,3 +126,13 @@ teacher-portal-django/
 │── requirements.txt
 │── README.md
 ```
+
+
+## 📂 Screen shots
+
+<img width="687" height="433" alt="image" src="https://github.com/user-attachments/assets/d22b3207-c2f7-4f28-bc42-9fcfd3db5189" />
+
+<img width="1908" height="773" alt="image" src="https://github.com/user-attachments/assets/3497351a-4ed1-4bc5-8550-430200f771d3" />
+
+
+
