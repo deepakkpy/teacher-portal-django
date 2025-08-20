@@ -1,0 +1,29 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Login • tailwebs</title>
+  <link rel="stylesheet" href="{% static 'portal/style.css' %}">
+</head>
+<body class="bg">
+  <div class="container small">
+    <h1 class="logo">tailwebs.</h1>
+    <div class="card">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <label>Username</label>
+        <input type="text" name="username" required maxlength="150" autocomplete="username">
+        <label>Password</label>
+        <input type="password" name="password" required autocomplete="current-password">
+        {% if error %}
+          <div class="error">{{ error }}</div>
+        {% endif %}
+        <button type="submit" class="btn">Login</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

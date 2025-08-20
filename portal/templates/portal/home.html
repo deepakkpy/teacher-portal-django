@@ -1,0 +1,187 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Home • tailwebs</title>
+  <link rel="stylesheet" href="{% static 'portal/style.css' %}">
+  <script>
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // ========= Modal Controls =========
+    function openModal(id=null, name='', subject='', marks='') {
+      document.getElementById('modal').style.display='flex';
+      const form = document.getElementById('addForm');
+      form.dataset.id = id || ''; // store id if editing
+
+      // fill values
+      form.name.value = name;
+      form.subject.value = subject;
+      form.marks.value = marks;
+
+      document.getElementById('formTitle').textContent = id ? "Edit Student" : "Add Student";
+      document.getElementById('submitBtn').textContent = id ? "Update" : "Add";
+    }
+
+    function closeModal(){
+      document.getElementById('modal').style.display='none';
+      const form = document.getElementById('addForm');
+      form.reset();
+      form.dataset.id = '';
+    }
+
+    // ========= CRUD Operations =========
+    function makeEditable(td, id, current) {
+      if (td.querySelector('input')) return;
+      const inp = document.createElement('input');
+      inp.type = 'number'; inp.min = 0; inp.max = 100; inp.value = current;
+      td.textContent = '';
+      td.appendChild(inp);
+      inp.focus();
+      inp.addEventListener('blur', () => commit(inp.value));
+      inp.addEventListener('keydown', (e)=>{ 
+        if(e.key==='Enter'){commit(inp.value)} 
+        if(e.key==='Escape'){td.textContent=current}
+      });
+      function commit(v){
+        const num = parseInt(v, 10);
+        if (Number.isNaN(num) || num<0 || num>100){ 
+          alert('Marks must be 0-100'); td.textContent=current; return;
+        }
+        const form = new FormData(); form.append('marks', num);
+        fetch(`/api/students/${id}/update/`, {method:'POST', headers:{'X-CSRFToken':csrftoken}, body: form})
+          .then(r=>r.json()).then(d=>{
+            if(!d.ok){ alert(d.error); td.textContent=current; } 
+            else { td.textContent = d.marks; }
+          }).catch(()=>{ alert('Network error'); td.textContent=current; });
+      }
+    }
+
+    function delRow(id, tr){
+      if(!confirm('Delete this record?')) return;
+      fetch(`/api/students/${id}/delete/`, {method:'POST', headers:{'X-CSRFToken':csrftoken}})
+        .then(r=>r.json()).then(d=>{
+          if(!d.ok){ alert(d.error);} else { tr.remove(); }
+        }).catch(()=>alert('Network error'));
+    }
+
+    function addOrEditStudent(ev){
+      ev.preventDefault();
+      const f = ev.target;
+      const fd = new FormData(f);
+      const m = parseInt(fd.get('marks'),10);
+      if(Number.isNaN(m)||m<0||m>100){alert('Marks must be 0-100');return;}
+
+      const id = f.dataset.id;
+      const url = id ? `/api/students/${id}/update/` : '/api/students/add/';
+
+      fetch(url, {method:'POST', headers:{'X-CSRFToken':csrftoken}, body: fd})
+        .then(r=>r.json()).then(d=>{
+          if(!d.ok){ alert(d.error); return; }
+
+          const tbody = document.querySelector('tbody');
+          let row = document.getElementById('row-'+d.id);
+          if(!row){
+            row = document.createElement('tr'); row.id = 'row-'+d.id;
+            row.innerHTML = `
+              <td>${d.name}</td>
+              <td>${d.subject}</td>
+              <td class="editable" data-id="${d.id}">${d.marks}</td>
+              <td>
+                <button class="btn small"
+                  data-id="${d.id}"
+                  data-name="${d.name}"
+                  data-subject="${d.subject}"
+                  data-marks="${d.marks}"
+                  onclick="openModal(this.dataset.id,this.dataset.name,this.dataset.subject,this.dataset.marks)">Edit</button>
+                <button class="btn small danger" onclick="delRow(${d.id}, this.closest('tr'))">Delete</button>
+              </td>`;
+            tbody.appendChild(row);
+
+            const td = row.children[2];
+            td.addEventListener('click', ()=>makeEditable(td, d.id, d.marks));
+          } else {
+            row.children[0].textContent = d.name;
+            row.children[1].textContent = d.subject;
+            row.children[2].textContent = d.marks;
+            row.querySelector('.btn.small').dataset.name = d.name;
+            row.querySelector('.btn.small').dataset.subject = d.subject;
+            row.querySelector('.btn.small').dataset.marks = d.marks;
+          }
+
+          closeModal();
+        });
+    }
+
+    // ========= Init =========
+    window.addEventListener('DOMContentLoaded', ()=>{
+      document.querySelectorAll('td.editable').forEach(td=>{
+        const id = td.dataset.id; const current = parseInt(td.textContent,10);
+        td.addEventListener('click', ()=>makeEditable(td, id, current));
+      });
+      document.getElementById('addForm').addEventListener('submit', addOrEditStudent);
+    });
+  </script>
+</head>
+<body class="bg">
+  <div class="topbar">
+    <div class="logo">tailwebs.</div>
+    <div class="links"><a href="/home/">Home</a> | <a href="/logout/">Logout</a></div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <table>
+        <thead><tr><th>Name</th><th>Subject</th><th>Mark</th><th>Action</th></tr></thead>
+        <tbody>
+          {% for s in students %}
+          <tr id="row-{{s.id}}">
+            <td>{{ s.name }}</td>
+            <td>{{ s.subject }}</td>
+            <td class="editable" data-id="{{s.id}}">{{ s.marks }}</td>
+            <td>
+              <button class="btn small"
+                data-id="{{s.id}}"
+                data-name="{{s.name}}"
+                data-subject="{{s.subject}}"
+                data-marks="{{s.marks}}"
+                onclick="openModal(this.dataset.id,this.dataset.name,this.dataset.subject,this.dataset.marks)">
+                Edit
+              </button>
+              <button class="btn small danger" onclick="delRow({{s.id}}, this.closest('tr'))">Delete</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <button class="btn mt" onclick="openModal()">Add</button>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal">
+    <div class="modal-inner">
+      <h3 id="formTitle">Add Student</h3>
+      <form id="addForm">
+        {% csrf_token %}
+        <label>Name</label>
+        <input type="text" name="name" required maxlength="120">
+        <label>Subject</label>
+        <input type="text" name="subject" required maxlength="120">
+        <label>Marks</label>
+        <input type="number" name="marks" required min="0" max="100">
+        <div class="modal-actions">
+          <button type="button" class="btn ghost" onclick="closeModal()">Cancel</button>
+          <button type="submit" id="submitBtn" class="btn">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
