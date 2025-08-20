@@ -1,22 +1,18 @@
-# portal/views.py
+
 
 import json
 import secrets
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_protect  # use CSRF on form + APIs
+from django.views.decorators.csrf import csrf_protect  
 from django.db import transaction
 
 from .models import Teacher, Student, AuditLog
 from .forms import LoginForm, AddStudentForm
 from .utils import verify_password, calculate_new_marks
 
-# -----------------------------
-# Manual (in-memory) session store
-# token -> teacher_id
-# NOTE: This resets on server restart. Use DB if you need persistence.
-# -----------------------------
+
 SESSION_STORE = {}
 
 
