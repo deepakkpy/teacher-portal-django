@@ -1,6 +1,6 @@
 # 🏫 Teacher Portal – Django Project  
 
-A secure teacher portal built with **Django**, allowing authenticated teachers to manage a list of students with inline editing and deletion. This project implements **manual authentication and session management (no Django auth)** for learning purposes.  
+A secure teacher portal built with **Django**, allowing authenticated teachers to manage a list of students with inline editing and deletion. This project implements **manual authentication and session management for learning purposes.  
 
 ---
 
